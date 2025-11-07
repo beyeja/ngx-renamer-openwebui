@@ -1,4 +1,6 @@
 .DS_Store
 .env
+.venv/
+venv/
 .vscode/launch.json
 __pycache__/

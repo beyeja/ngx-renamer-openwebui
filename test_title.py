@@ -10,8 +10,9 @@ load_dotenv()
 
 openai_api_key = os.getenv("OPENAI_API_KEY")
 
-ai = OpenAITitles(openai_api_key, "/usr/src/ngx-renamer/settings.yaml")
+ai = OpenAITitles(openai_api_key, "/usr/src/ngx-renamer-openwebui/settings.yaml")
 
+print("Testing the title generation...")
 
 def main():
     text = """

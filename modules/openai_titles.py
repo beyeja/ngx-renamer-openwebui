@@ -3,12 +3,17 @@ from datetime import datetime
 from openai import OpenAI
 import yaml
 
+load_dotenv()
+openai_base_url = os.getenv("OPENAI_BASE_URL")
 
 class OpenAITitles:
     def __init__(self, openai_api_key, settings_file="settings.yaml") -> None:
-        self.__openai = OpenAI(api_key=openai_api_key)
+        self.__openai = OpenAI(
+            api_key=openai_api_key,
+            base_url=openai_base_url
+        )
         self.settings = self.__load_settings(settings_file)
-
+        print("testing...", self.settings)
 
     def __load_settings(self, settings_file):
         try:
@@ -17,7 +22,6 @@ class OpenAITitles:
         except Exception as e:
             print(f"Error loading settings file: {e}")
             return None
-
 
     def __ask_chat_gpt(self, content, role="user"):
         try:

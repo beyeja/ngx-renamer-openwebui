@@ -9,7 +9,7 @@ You need an OpenAI API account to run it.
 
 **Download or checkout the source code:**
 
-* Copy the directory into your paperless docker compose directory (where the `docker-compose.yml` is located).
+- Copy the directory into your paperless docker compose directory (where the `docker-compose.yml` is located).
 
 ```bash
 # It will look like this
@@ -19,7 +19,7 @@ user@host:~/paperless$ tree . -L 2
 ├── docker-compose.env
 ├── docker-compose.yml
 ├── export
-└── ngx-renamer
+└── ngx-renamer-openwebui
     ├── change_title.py
     ├── modules
     ├── post_consume_script.sh
@@ -32,7 +32,7 @@ user@host:~/paperless$ tree . -L 2
     ├── title_finder.py
 ```
 
-**Create a `.env` file in the `ngx-renamer` directory and put your credentials in:**
+**Create a `.env` file in the `ngx-renamer-openwebui` directory and put your credentials in:**
 
 ```bash
 # you can create an openai key under https://platform.openai.com/settings/organization/api-keys
@@ -45,7 +45,7 @@ PAPERLESS_NGX_API_KEY=<your_paperless_api_token>
 PAPERLESS_NGX_URL=http://your-domain.whatever:port
 ```
 
-**Open the `docker-compose.yml` file and add the directory `ngx-renamer` as internal directory to the webserver container and `post_consume_script.sh` as post consumption script:**
+**Open the `docker-compose.yml` file and add the directory `ngx-renamer-openwebui` as internal directory to the webserver container and `post_consume_script.sh` as post consumption script:**
 
 ```bash
   webserver:
@@ -64,7 +64,7 @@ PAPERLESS_NGX_URL=http://your-domain.whatever:port
       - ./export:/usr/src/paperless/export
       - /data/paperless/consume:/usr/src/paperless/consume
       # this is the new volume for nxg-renamer - add this
-      - /your/path/to/paperless/ngx-renamer:/usr/src/ngx-renamer
+      - /your/path/to/paperless/ngx-renamer-openwebui:/usr/src/ngx-renamer-openwebui
     env_file: docker-compose.env
     environment:
       PAPERLESS_REDIS: redis://broker:6379
@@ -73,9 +73,11 @@ PAPERLESS_NGX_URL=http://your-domain.whatever:port
       PAPERLESS_TIKA_GOTENBERG_ENDPOINT: http://gotenberg:3000
       PAPERLESS_TIKA_ENDPOINT: http://tika:9998
       # This is the post consumption script call - add this
-      PAPERLESS_POST_CONSUME_SCRIPT: /usr/src/ngx-renamer/post_consume_script.sh
+      PAPERLESS_POST_CONSUME_SCRIPT: /usr/src/ngx-renamer-openwebui/post_consume_script.sh
 ```
+
 **Restart your paperless system:**
+
 ```bash
 user@host:~/paperless$ docker compose down
 [+] Running 6/6
@@ -99,19 +101,19 @@ user@host:~/paperless$ docker compose up -d
 
 ```bash
 # Change owner to root
-user@host:~/paperless$ sudo chown -R root ngx-renamer/
+user@host:~/paperless$ sudo chown -R root ngx-renamer-openwebui/
 # Make scripts executable
-user@host:~/paperless$ sudo chmod +x ngx-renamer/setup_venv.sh
-user@host:~/paperless$ sudo chmod +x ngx-renamer/post_consume_script.sh
+user@host:~/paperless$ sudo chmod +x ngx-renamer-openwebui/setup_venv.sh
+user@host:~/paperless$ sudo chmod +x ngx-renamer-openwebui/post_consume_script.sh
 # run setup routine
-user@host:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer/setup_venv.sh
+user@host:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer-openwebui/setup_venv.sh
 ```
 
 **The result sould look like:**
 
 ```bash
 # Shortened version of the output
-user@khost:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer/setup_venv.sh
+user@khost:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer-openwebui/setup_venv.sh
 Setting up virtual environment...
 OK
 ...
@@ -125,7 +127,7 @@ Successfully installed pyyaml-6.0.2
 
 ```bash
 # This script should run with an 404 error.
-user@host:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer/post_consume_script.sh
+user@host:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-renamer-openwebui/post_consume_script.sh
 ```
 
 ## The settings
@@ -133,14 +135,19 @@ user@host:~/paperless$ docker compose exec -u paperless webserver /usr/src/ngx-r
 You may edit `settings.yaml` to edit the prompt and with that the results.
 
 **Test the different models at OpenAI:**
+
 ```yaml
 openai_model: "gpt-4o-mini" # the model to use for the generation
 ```
+
 **Decide whether you want to have a date as a prefix:**
+
 ```yaml
 with_date: true # boolean if the title should the date as a prefix
 ```
+
 **Play with the prompt - it is a work in progress and tested in Englsh and German:**
+
 ```yaml
 prompt:
   # the main prompt for the AI
@@ -172,7 +179,7 @@ prompt:
   pre_content: |
     ### begin of text ###
   # the prompt after the content of the document will be appended
-  post_content: |  
+  post_content: |
     ### end of text ###
 ```
 
@@ -180,10 +187,10 @@ prompt:
 
 If you want to develop and test is without integrating it in Paperless NGX you can do that.
 
-* Create a virtual environment
-* Load all libraries
-* Call test scripts
-* Enjoy optimizing the prompt in settings.yaml
+- Create a virtual environment
+- Load all libraries
+- Call test scripts
+- Enjoy optimizing the prompt in settings.yaml
 
 ### Create virtual environment
 
@@ -204,8 +211,9 @@ $ source .venv/bin/activate
 ```bash
 # prints the thought title from a american law text
 (.venv)$ python3 test_title.py
-````
+```
 
 ```bash
 # read the content from a OCR'ed pdf file
 (.venv)$ python3 ./test_pdf.py path/to/your/ocr-ed/pdf/file
+```

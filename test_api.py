@@ -36,7 +36,11 @@ def main():
     print(f"Response Status Code: {response.status_code}") 
 
     if response.status_code == 200:
-        print(response.json())
+        try:
+            print(response.json())
+        except Exception as e:
+            print(f"Error while deserializeing doc details: {e}")
+            print(response.text)
     else:
         print(
             f"Failed to get document details from paperless-ngx. Status code: {response.status_code}"

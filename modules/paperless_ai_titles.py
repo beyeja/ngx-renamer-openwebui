@@ -32,7 +32,7 @@ class PaperlessAITitles:
 
 
     def __update_document_title(self, document_id, new_title):
-        payload = {"title": new_title}
+        payload = {"title": new_title.strip()[:128]}
 
         headers = {
             "Authorization": f"Token {self.paperless_api_key}",
