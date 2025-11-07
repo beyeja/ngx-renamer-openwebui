@@ -1,9 +1,7 @@
-⚠️ The current prompt is not working anymore. This is currently **not for production** use!. I will create a version including ollama support but it will take longer ⚠️
+# Rename titles in Paperless NGX using local AI via OpenWebUI
+This is a fork of the ngx-renamer repository but extended to be usable with your own OpenWebUI via openai-compatible API. This way its possible to use local ai (i.e. ollama) as long as it is managed via OpenWebUI. The Prompt and title extraction has also been fixed. 
 
-# Rename titles in Paperless NGX using OpenAI
-
-This is a Paperless NGX post consumption script.More information under this link : https://docs.paperless-ngx.com/advanced_usage/#consume-hooks.
-You need an OpenAI API account to run it.
+Further improvements and robustness will follow soon. Use it at your own risk.
 
 ## Installation in Paperless NGX
 
