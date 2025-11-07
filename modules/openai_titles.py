@@ -62,8 +62,87 @@ class OpenAITitles:
             prompt += setting_prompt.get("post_content", "")
 
             result = self.__ask_chat_gpt(prompt)
-            return result.choices[0].message.content
+
+            # Defensive: check result shape and extract raw content
+            raw_content = None
+            try:
+                # SDK object style: result.choices[0].message.content
+                raw_content = result.choices[0].message.content
+            except Exception:
+                try:
+                    # dict style: result['choices'][0]['message']['content']
+                    raw_content = result.get('choices', [])[0].get('message', {}).get('content')
+                except Exception:
+                    raw_content = None
+
+            if not raw_content:
+                return None
+
+            # Extract final title from the model output using heuristics
+            return self._extract_final_title_from_content(raw_content)
         else:
             print("Prompt settings not found.")
             return None
+
+    def _extract_final_title_from_content(self, content: str) -> str:
+        """Try several heuristics to pick the final title from the model output.
+
+        Heuristics (in order):
+        - If triple-quoted block present, take text inside the last triple-quote block
+        - Look for lines that appear to be a final label (e.g., 'Final Title:', 'Title:')
+        - Remove lines containing 'thinking' or similar artifacts
+        - Otherwise, use the last non-empty line that's reasonably short
+        """
+        if not content or not isinstance(content, str):
+            return ""
+
+        # Normalize line endings and strip
+        text = content.strip()
+
+        # 1) Triple-quoted block (take last occurrence)
+        try:
+            if '"""' in text:
+                parts = text.split('"""')
+                # parts between triple quotes are at odd indices; take last odd-index part
+                if len(parts) >= 3:
+                    # find last non-empty quoted block
+                    for i in range(len(parts) - 1, -1, -1):
+                        if parts[i].strip():
+                            candidate = parts[i].strip()
+                            # return first line of candidate (title should be short)
+                            return candidate.splitlines()[0].strip()
+        except Exception:
+            pass
+
+        # Split into lines and filter out 'thinking' lines
+        lines = [l.rstrip() for l in text.splitlines()]
+        filtered = []
+        for l in lines:
+            low = l.lower()
+            if not l.strip():
+                continue
+            # remove common thinking artifacts
+            if 'thinking' in low or 'thought' in low or l.strip().startswith('...'):
+                continue
+            # skip metadata-like lines
+            if low.startswith('assistant:') or low.startswith('final:') or low.startswith('final title'):
+                # keep the remainder after colon if present
+                parts = l.split(':', 1)
+                if len(parts) > 1 and parts[1].strip():
+                    filtered.append(parts[1].strip())
+                continue
+            filtered.append(l.strip())
+
+        if not filtered:
+            return text
+
+        # If the model returned multiple candidate lines, prefer the last reasonable one
+        # Choose last line that is not too long (<=128 chars)
+        for candidate in reversed(filtered):
+            if 0 < len(candidate) <= 128:
+                # strip surrounding quotes or dashes
+                return candidate.strip().strip('"').strip("'").strip('-').strip()
+
+        # Fallback to the last filtered line
+        return filtered[-1].strip()
     
