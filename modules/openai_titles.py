@@ -1,7 +1,10 @@
 from datetime import datetime
 
 from openai import OpenAI
+from dotenv import load_dotenv
+
 import yaml
+import os
 
 load_dotenv()
 openai_base_url = os.getenv("OPENAI_BASE_URL")
