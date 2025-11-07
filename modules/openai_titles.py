@@ -16,7 +16,7 @@ class OpenAITitles:
             base_url=openai_base_url
         )
         self.settings = self.__load_settings(settings_file)
-        print("testing...", self.settings)
+        print("Init with settings: ", self.settings)
 
     def __load_settings(self, settings_file):
         try:
@@ -78,6 +78,9 @@ class OpenAITitles:
             if not raw_content:
                 return None
 
+            print();
+            print("Raw LLM Output:", raw_content);
+            print();
             # Extract final title from the model output using heuristics
             return self._extract_final_title_from_content(raw_content)
         else:
@@ -99,21 +102,6 @@ class OpenAITitles:
         # Normalize line endings and strip
         text = content.strip()
 
-        # 1) Triple-quoted block (take last occurrence)
-        try:
-            if '"""' in text:
-                parts = text.split('"""')
-                # parts between triple quotes are at odd indices; take last odd-index part
-                if len(parts) >= 3:
-                    # find last non-empty quoted block
-                    for i in range(len(parts) - 1, -1, -1):
-                        if parts[i].strip():
-                            candidate = parts[i].strip()
-                            # return first line of candidate (title should be short)
-                            return candidate.splitlines()[0].strip()
-        except Exception:
-            pass
-
         # Split into lines and filter out 'thinking' lines
         lines = [l.rstrip() for l in text.splitlines()]
         filtered = []
@@ -134,6 +122,7 @@ class OpenAITitles:
             filtered.append(l.strip())
 
         if not filtered:
+            print("No valid lines found in LLM output.")
             return text
 
         # If the model returned multiple candidate lines, prefer the last reasonable one
@@ -141,8 +130,26 @@ class OpenAITitles:
         for candidate in reversed(filtered):
             if 0 < len(candidate) <= 128:
                 # strip surrounding quotes or dashes
-                return candidate.strip().strip('"').strip("'").strip('-').strip()
+                candidate = candidate.strip().strip('"').strip("'").strip('-').strip()
+                # handle HTML-like tags: <title>...</title> or other wrappers
+                try:
+                    import re, html
+
+                    # Simplified and robust logic to extract text inside <title>...</title>
+                    m = re.search(r"<title>(.*?)</title>", candidate, flags=re.IGNORECASE | re.DOTALL)
+                    if m:
+                        # Extract and clean the inner text
+                        candidate = m.group(1).strip()
+
+                    print(f"Extracted candidate title: {candidate}")
+
+                    # Unescape HTML entities
+                    return html.unescape(candidate)
+                except Exception as e:
+                    print(f"Error extracting title: {e}")
+                    return candidate
 
         # Fallback to the last filtered line
+        print("Falling back to last filtered line.")
         return filtered[-1].strip()
-    
+
